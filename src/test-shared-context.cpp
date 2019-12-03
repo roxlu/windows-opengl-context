@@ -10,12 +10,17 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 /* ----------------------------------------------------------- */
 
-struct GlContext {
+class GlContext {
+public:
+  void print(const char* name);
+
+public:
   HWND hwnd = nullptr;
   HDC dc = nullptr;
   int dx = -1;
   PIXELFORMATDESCRIPTOR fmt = {};
   HGLRC gl = nullptr;
+  GlContext* shared = nullptr;
   
   PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = nullptr;
   PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr;
@@ -32,23 +37,34 @@ int main(int narg, char* arg[]) {
 
   printf("! Testing with shared context between threads.\n");
 
+  /* Create our temporary context that we need to create our main context. */
   GlContext tmp;
   if (0 != create_tmp_context(tmp)) {
     printf("Failed to create a tmp context. (exiting).\n");
     exit(EXIT_FAILURE);
   }
+  tmp.print("tmp");
 
-  printf("! Created a temporary GL context: %s\n", glGetString(GL_VERSION));
+  /* Create our shared context */
+  GlContext shared;
+  if (0 != create_main_context(tmp, shared)) {
+    printf("Failed to create the shared context. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
+  shared.print("shared");
 
+  /* Create our main context (which is can share with `shared`). */
   GlContext main;
+  main.shared = &shared;
+
   if (0 != create_main_context(tmp, main)) {
     printf("Failed to create a main context. (exiting).\n");
     exit(EXIT_FAILURE);
   }
 
-  wglMakeCurrent(main.dc, main.gl);
+  main.print("main");
+
   printf("! Created the main GL context: %s\n", glGetString(GL_VERSION));
-  
 
   return EXIT_SUCCESS;
 }
@@ -164,6 +180,7 @@ static int destroy_tmp_context(GlContext& ctx) {
   ctx.dc = nullptr;
   ctx.dx = -1;
   ctx.gl = nullptr;
+  ctx.shared = nullptr;
   ctx.wglChoosePixelFormatARB = nullptr;
   ctx.wglCreateContextAttribsARB = nullptr;
 
@@ -176,6 +193,7 @@ static int create_main_context(GlContext& tmp, GlContext& main) {
 
   int r = 0;
   UINT fmt_count = 0;
+  HGLRC shared_gl = nullptr;
 
   /* The pixel format attributes that we need. */
   const int pix_attribs[] = {
@@ -257,7 +275,11 @@ static int create_main_context(GlContext& tmp, GlContext& main) {
   }
 
   /* Step 3: create our main context. */
-  main.gl = tmp.wglCreateContextAttribsARB(main.dc, 0, ctx_attribs);
+  if (nullptr != main.shared) {
+    shared_gl = main.shared->gl;
+  }
+  
+  main.gl = tmp.wglCreateContextAttribsARB(main.dc, shared_gl, ctx_attribs);
   if (nullptr == main.gl) {
     printf("Failed to create our main OpenGL context.\n");
     r = -8;
@@ -278,6 +300,30 @@ static int create_main_context(GlContext& tmp, GlContext& main) {
 
 static int destroy_main_context(GlContext& main) {
   return destroy_tmp_context(main);
+}
+
+/* ------------------------------------------------------------- */
+
+void GlContext::print(const char* name) {
+
+  if (nullptr == name) {
+    printf("Cannot print, pass in a name.\n");
+    return;
+  }
+  
+  if (nullptr == gl) {
+    printf("Cannot print info, not initialized (gl == nullptr) .\n");
+    return;
+  }
+
+  if (nullptr == dc) {
+    printf("Cannot print into, not initialized (dc == nullptr). \n");
+    return;
+  }
+
+  wglMakeCurrent(dc, gl);
+  printf("%s: GL_VERSION: %s\n", name, glGetString(GL_VERSION));
+  printf("%s: GL_VENDOR: %s\n", name, glGetString(GL_VENDOR));
 }
 
 /* ------------------------------------------------------------- */
