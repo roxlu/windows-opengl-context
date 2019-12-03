@@ -89,8 +89,6 @@ if %compiler% == "clang" (
 
   cmake -DCMAKE_BUILD_TYPE="%cmake_bt%" ^
         -DCMAKE_INSTALL_PREFIX="%id%" ^
-        -DPOLY_DIR=./../extern/roxlu-polytrope/ ^
-        -DENABLE_PROFILING=%profile_enable% ^
         -G %cmake_gen% ^
         -A X64 ^
         ..
