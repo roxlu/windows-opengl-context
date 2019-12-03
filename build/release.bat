@@ -111,9 +111,9 @@ if %compiler% == "clang" (
 
 :: Run
 cd %id%/bin
-test-research
+:: test-research
 :: test-shared-context
-:: test-shared-context-threading
+test-shared-context-threading
 cd %d%
 goto success
 

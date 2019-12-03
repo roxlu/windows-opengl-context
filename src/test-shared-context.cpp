@@ -6,10 +6,6 @@
 
 /* ----------------------------------------------------------- */
 
-LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-/* ----------------------------------------------------------- */
-
 class GlContext {
 public:
   void print(const char* name);
@@ -52,7 +48,7 @@ int main(int narg, char* arg[]) {
   }
   shared.print("shared");
 
-  /* Create our main context (which is can share with `shared`). */
+  /* Create our main context (which can share with `shared`). */
   GlContext main;
   main.shared = &shared;
 
@@ -62,8 +58,6 @@ int main(int narg, char* arg[]) {
   }
 
   main.print("main");
-
-  printf("! Created the main GL context: %s\n", glGetString(GL_VERSION));
 
   return EXIT_SUCCESS;
 }

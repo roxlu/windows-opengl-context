@@ -7,10 +7,6 @@
 
 /* ----------------------------------------------------------- */
 
-LRESULT CALLBACK window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-/* ----------------------------------------------------------- */
-
 class GlContext {
 public:
   void print(const char* name);
@@ -49,7 +45,7 @@ int main(int narg, char* arg[]) {
   }
   tmp.print("tmp");
 
-  /* Create our main context (which is can share with `shared`). */
+  /* Create our main context (which can share with `shared`). */
   GlContext main;
   if (0 != create_main_context(tmp, main)) {
     printf("Failed to create a main context. (exiting).\n");
@@ -58,8 +54,8 @@ int main(int narg, char* arg[]) {
 
   main.print("main");
 
-#define CREATE_SHARED_CONTEXT_IN_OTHER_THREAD 0
-#define CREATE_SHARED_CONTEXT_IN_MAIN_THREAD 1
+#define CREATE_SHARED_CONTEXT_IN_OTHER_THREAD 1
+#define CREATE_SHARED_CONTEXT_IN_MAIN_THREAD 0
 
 #if CREATE_SHARED_CONTEXT_IN_OTHER_THREAD
 
