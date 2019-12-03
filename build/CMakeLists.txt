@@ -41,10 +41,10 @@ macro(create_test name)
   set_target_properties(${test_name} PROPERTIES
     LINK_FLAGS "/SUBSYSTEM:CONSOLE /ENTRY:mainCRTStartup"
     )
+  
 endmacro()
 
-#create_test("create-gl-context")
-create_test("basic-window")
+create_test("research")
 create_test("shared-context")
 create_test("shared-context-threading")
 
