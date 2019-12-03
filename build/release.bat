@@ -112,7 +112,8 @@ if %compiler% == "clang" (
 :: Run
 cd %id%/bin
 :: test-create-gl-context.exe
-test-basic-window.exe
+:: test-basic-window.exe
+test-shared-context
 echo "Executed"
 cd %d%
 goto success
