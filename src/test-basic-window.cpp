@@ -314,6 +314,42 @@ int main(int narg, char* arg[]) {
   /* ------------------------------------------------------------------------------- */
   
   /* 
+     Again, create a window. We can reuse our registered windows
+     `class` (see above, where we defined the WNDCLASSEX and set
+     a pointer to our window procedure). We have to create a new
+     window because you can only assign a pixel format to a
+     window once.
+  */
+  
+  printf("- We've got a handle to `wglChoosePixelFormatARB()`\n");
+
+  HWND main_hwnd = CreateWindowEx(
+    0,                              /* Optional window styles. */
+    dummy_class_name,               /* Window class */
+    L"roxlu",                       /* Window title */
+    WS_OVERLAPPEDWINDOW,            /* Window style */
+
+    /* Size and position */
+    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+
+    nullptr,       /* Parent window */
+    nullptr,       /* Menu */
+    inst,          /* Instance handle */
+    nullptr        /* Additional application data */
+  );
+
+  if (nullptr == main_hwnd) {
+    printf("`main_hwnd` is nullptr. Failed to create our main window. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
+
+  HDC main_hdc = GetDC(main_hwnd);
+  if (nullptr == main_hdc) {
+    printf("Failed to get the DC for our `main_hwnd`. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
+  
+  /* 
      Finally ... we can use our dummy OpenGL context, to retrieve
      the `wglChoosePixelForamtARB()~ function that gives us a way
      to create a OpenGL context that supports more modern
@@ -326,39 +362,79 @@ int main(int narg, char* arg[]) {
     exit(EXIT_FAILURE);
   }
 
-  PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr;
-  wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
-  if (wglCreateContextAttribsARB == nullptr) {
-    showMessage("wglGetProcAddress() failed.");
-    return 1;
+  /* Now we can use a pixel format with more features. */
+  const int main_pix_attribs[] = {
+    WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+    WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+    WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+    WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
+    WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+    WGL_COLOR_BITS_ARB, 32,
+    WGL_ALPHA_BITS_ARB, 8,
+    WGL_DEPTH_BITS_ARB, 24,
+    WGL_STENCIL_BITS_ARB, 8,
+    WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+    WGL_SAMPLES_ARB, 4,
+    0
+  };
+ 
+  int main_pix_fmt_dx = 0;
+  UINT main_pix_fmt_count = 0;
+  if (FALSE == wglChoosePixelFormatARB(main_hdc, main_pix_attribs, NULL, 1, &main_pix_fmt_dx, &main_pix_fmt_count)) {
+    printf("Failed to choose a valid pixel format for our main hdc. (exiting).\n");
+    exit(EXIT_FAILURE);
   }
 
   /* 
-     Again, create a window. We can reuse our registered windwos
-     `class` (see above, where we defined the WNDCLASSEX and set
-     a pointer to our window procedure.
-
-     We have to create a new window becuase you can only assign a
-     pixel format to a window once. Because our dummy window, uses
-     a dummy pixel format that doesn't use our 
+     Now that we found a valid pixel format index, we have to
+     fill a PIXELFORMATDESCRIPTOR to tell our HDC what pixel
+     format it should use. To create our PIXELFORMATDESCRIPTOR we
+     use `DescribePixelFormat()`.
   */
-  
-  printf("- We've got a handle to `wglChoosePixelFormatARB()`\n");
-  
-  HWND hwnd = CreateWindowEx(
-    0,                              /* Optional window styles. */
-    class_name,                     /* Window class */
-    L"roxlu",                       /* Window title */
-    WS_OVERLAPPEDWINDOW,            /* Window style */
+  PIXELFORMATDESCRIPTOR main_pix_fmt = {};
+  if (0 == DescribePixelFormat(main_hdc, main_pix_fmt_dx, sizeof(main_pix_fmt), &main_pix_fmt)) {
+    printf("Failed to fill our main pixel format descriptor. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
 
-    /* Size and position */
-    CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+  if (FALSE == SetPixelFormat(main_hdc, main_pix_fmt_dx, &main_pix_fmt)) {
+    printf("Failed to set our main pixel format. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
 
-    nullptr,       /* Parent window */
-    nullptr,       /* Menu */
-    inst,          /* Instance handle */
-    nullptr        /* Additional application data */
-  );
+  /* 
+     Nice, we have our main HDC and setup the pixel format. Now,
+     it's finally time to create our main GL context.
+  */
+  PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr;
+  wglCreateContextAttribsARB = reinterpret_cast<PFNWGLCREATECONTEXTATTRIBSARBPROC>(wglGetProcAddress("wglCreateContextAttribsARB"));
+  if (wglCreateContextAttribsARB == nullptr) {
+    printf("wglGetProcAddress() failed. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
+
+  int main_ctx_attribs[] = {
+    WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+    WGL_CONTEXT_MINOR_VERSION_ARB, 1,
+    WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+    0
+  };
+  
+  HGLRC main_ctx = wglCreateContextAttribsARB(main_hdc, 0, main_ctx_attribs);
+  if (nullptr == main_ctx) {
+    printf("Failed to create our main OpenGL context. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
+    
+  if (FALSE == wglMakeCurrent(main_hdc, main_ctx)) {
+    printf("Failed to make our main OpenGL context current. (exiting).\n");
+    exit(EXIT_FAILURE);
+  }
+
+  printf("- Found pixel format for our main hwnd and GL context: %d\n", main_pix_fmt_dx);
+  printf("- Max pixel formats found: %d\n", main_pix_fmt_count);
+  printf("- GL_VERSION: %s\n", glGetString(GL_VERSION));
+  printf("- GL_VENDOR: %s\n", glGetString(GL_VENDOR));
   
   /* ------------------------------------------------------------- */
   /*
@@ -387,24 +463,28 @@ int main(int narg, char* arg[]) {
    */
   /* ------------------------------------------------------------- */
 
-  /* 
-     @todo this is where we show the window and implement the 
-     render and event loop
-  */
+  ShowWindow(main_hwnd, SW_SHOW);
+
+  MSG msg = { };
+  while (GetMessage(&msg, NULL, 0, 0)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
+  
   return 0;
 }
 
 /* ----------------------------------------------------------- */
 
 LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-
+  
    switch (msg) {
 
      case WM_KEYDOWN: {
        if (VK_ESCAPE == wparam) {
          PostQuitMessage(0);
        }
-     return 0;
+       return 0;
      }
      
      case WM_DESTROY: {
@@ -412,13 +492,13 @@ LRESULT CALLBACK window_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) 
        return 0;
      }
        
-    case WM_PAINT: {
-      PAINTSTRUCT ps;
-      HDC hdc = BeginPaint(hwnd, &ps);
-      FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+2));
-      EndPaint(hwnd, &ps);
-      return 0;
-    }
+     case WM_PAINT: {
+       PAINTSTRUCT ps;
+       HDC hdc = BeginPaint(hwnd, &ps);
+       FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+2));
+       EndPaint(hwnd, &ps);
+       return 0;
+     }
    }
    
    return DefWindowProc(hwnd, msg, wparam, lparam);
