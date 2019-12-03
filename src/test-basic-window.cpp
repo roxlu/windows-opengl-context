@@ -5,27 +5,28 @@
 
   I'm doing some research on creating a shared OpenGL
   context. I'm doing this to figure out why the Filament library
-  cause a crash when trying to make their OpenGL context, which
-  is shared crashes.
+  crashes when it uses a shared context. 
   
-  So starting with the most basic windows as described [here][0]. 
-  Another good resource that describes how to create an OpenGL
-  context can [be found here][1].
+  I'm starting with the most basic way to create a Window and a
+  OpenGL 4.1 context, as described [here][0]. Another good
+  resource that describes how to create an OpenGL context can [be
+  found here][1].
 
   OUTCOME / RESULT:
   ==================
 
   After diving into this I think I know enough to continue
   testing with GLFW and Filament. Have a look at the `SUMMARY`
-  section in the code (inside main()) below.
+  section in the code (inside main()) below. I'll describe some
+  relevant things in the paragraphs below.
 
   Device Contexts
   ----------------
 
-  As Device Contexts (DCs) are very common when reading up on Windows
-  and creating an OpenGL context I thinks it would be good to read up on 
-  this a bit. [This page, Device Context][5] gives a good introduction
-  which I'll summarize below.
+  As Device Contexts (DCs) are very common when reading up about
+  the Windows API and the OpenGL Windows API (WGL) I think it
+  would be good to paste some snippets here. As a reference see
+  [this page on Device Contexts][5].
 
   [This article starts with a pretty clear description][5] :
 
@@ -56,16 +57,16 @@
      following attributes are associated with each of these
      objects.  
 
-   Device Context Types: [see this page][8]
+   [Device Context Types][8]
 
      There are four types of DCs: display, printer, memory (or
      compatible), and information. Each type serves a specific
      purpose, as described in the following table.
 
-     Display Device Context
+     Display Device Context:
 
      An application obtains a display DC by calling the
-     BeginPaint, GetDC, or GetDCEx function and identifying the
+     BeginPaint, GetDC, or GetDCEx functions and identifying the
      window in which the corresponding output will
      appear. Typically, an application obtains a display DC only
      when it must draw in the client area. However, one may
@@ -84,12 +85,12 @@
 
      Private Display Device Context:
      -------------------------------- 
-     Private device contexts are
-     display DCs that, unlike common device contexts, retain any
-     changes to the default data even after an application
-     releases them. Private device contexts are used in
-     applications that perform numerous drawing operations such
-     as computer-aided design (CAD) applications,
+
+     Private device contexts are display DCs that, unlike common
+     device contexts, retain any changes to the default data even
+     after an application releases them. Private device contexts
+     are used in applications that perform numerous drawing
+     operations such as computer-aided design (CAD) applications,
      desktop-publishing applications, drawing and painting
      applications, and so on. Private device contexts are not
      part of the system cache and therefore need not be released
@@ -113,6 +114,7 @@
      system until the window is deleted.
  
      The CS_OWNDC style:
+
      - See [this forum thread][2] 
      - See [this Microsoft Devblog article][3] 
      - See above, `Private Display Device Context`
@@ -123,14 +125,20 @@
   Before you can create a OpenGL Rendering Context, you have
   create a window that fits the needs of the GL Rendering
   Context. This includes things like if you want a depth buffer,
-  single or double buffer, stencil, etc. To do this yo uhave to
+  single or double buffer, stencil, etc. To do this you have to
   find the pixel format that is suitable for your needs.
 
   The pixel format for a window is identified by an index. Before
   you can search for the correct pixel format you should make use
   of the `WGL_ARB_pixel_format` extension. This extension allows
-  you to select a pixel format that's not provided through the 
-  windows default features; things multi sampling for example.
+  you to select a pixel format that's not provided through the
+  windows default features; You can read up on why the OpenGL
+  functions that Windows provides are so limited, but in short it
+  has to do that Windows basically didn't want to keep their
+  OpenGL support up-to-date. Luckily OpenGL supports extensions.
+  An extension can be loaded at runtime; meaning that the
+  functions that the extension supports are dynamically loaded;
+  much like a dll plugin.
 
   The `wglChoosePixeFormatARB()` provides a big list with
   attributes that can be associated with a context. To be able to
@@ -139,7 +147,7 @@
 
   The first argument that we pass into this function is a HDC.
   This is the device context of the window. You can use
-  `GetDC(HWND hdwnd)` to retrieve this device context. Th4is HDC
+  `GetDC(HWND hdwnd)` to retrieve this device context. This HDC
   can then be used to draw into the client area of the window.
 
   Filament
