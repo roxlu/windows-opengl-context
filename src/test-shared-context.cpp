@@ -15,15 +15,14 @@ public:
   void print(const char* name);
 
 public:
-  HWND hwnd = nullptr;
-  HDC dc = nullptr;
-  int dx = -1;
-  PIXELFORMATDESCRIPTOR fmt = {};
-  HGLRC gl = nullptr;
-  GlContext* shared = nullptr;
-  
   PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = nullptr;
   PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = nullptr;
+  PIXELFORMATDESCRIPTOR fmt = {};
+  GlContext* shared = nullptr;
+  HWND hwnd = nullptr;
+  HGLRC gl = nullptr;
+  HDC dc = nullptr;
+  int dx = -1;
 };
 
 static int create_tmp_context(GlContext& ctx);
@@ -35,7 +34,7 @@ static int destroy_main_context(GlContext& main);
 
 int main(int narg, char* arg[]) {
 
-  printf("! Testing with shared context between threads.\n");
+  printf("! Testing with shared context.\n");
 
   /* Create our temporary context that we need to create our main context. */
   GlContext tmp;

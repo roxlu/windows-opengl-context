@@ -46,5 +46,6 @@ endmacro()
 #create_test("create-gl-context")
 create_test("basic-window")
 create_test("shared-context")
+create_test("shared-context-threading")
 
 
