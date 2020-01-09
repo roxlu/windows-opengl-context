@@ -33,3 +33,17 @@ repository contains 3 tests:
 - Open a *x64 Native Tools Command Prompt for VS 2019*
 - Go into the `build` directory
 - Run `release.bat`
+
+## Solution (?)
+
+[baldurk](https://www.twitter.com/baldurk) pointed me to
+something which seems to be the cause of the issue. I'm creating a
+new OpenGl context in a separate thread and try to use the OpenGl
+context from the main as a shared context. Though the OpenGl
+context from the main thread is still *current*.  When I unset
+the current OpenGl context from the main thread things seem to
+work!
+
+**IMPORTANT**: when you create an OpenGl context and you want to
+share this context with a context that you create in another
+thread, make sure that the context is **not** current.
