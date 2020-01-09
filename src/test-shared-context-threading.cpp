@@ -59,18 +59,30 @@ int main(int narg, char* arg[]) {
 
 #if CREATE_SHARED_CONTEXT_IN_OTHER_THREAD
 
+  /* 
+     Make sure the GL context from the main thread which whom we
+     share is not current.
+  */
+#if 1 
+  if (FALSE == wglMakeCurrent(nullptr, nullptr)) {
+    printf("Failed to unset the current GL context. (exiting). \n");
+    exit(EXIT_FAILURE);
+  }
+#endif  
+
+  
   /*
     Create a thread in which we create a new context that shares
     with `main`. This won't work, the call to
     `wglCreateContextAttribsARB()` fails.
    */
-  
   std::thread my_thread(thread_func, (void*)&main);
   Sleep(1000);
 #endif
 
 #if CREATE_SHARED_CONTEXT_IN_MAIN_THREAD
 
+  
   /*
     Here we "simulate" what is done in `thread_func` but now we
     create the contexts from the main thread.  We also make sure
