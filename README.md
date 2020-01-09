@@ -42,7 +42,7 @@ new OpenGl context in a separate thread and try to use the OpenGl
 context from the main as a shared context. Though the OpenGl
 context from the main thread is still *current*.  When I unset
 the current OpenGl context from the main thread things seem to
-work!
+work! [See this, where I unset the current context](https://github.com/roxlu/windows-opengl-context/blob/master/src/test-shared-context-threading.cpp#L62-L71).
 
 **IMPORTANT**: when you create an OpenGl context and you want to
 share this context with a context that you create in another
